@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Eshara | AI Sign Language Translator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Poppins',sans-serif;background:#fff;color:#333;min-height:100vh;display:flex;flex-direction:column;transition:0.3s}
+        header{background:#e6f2ff;padding:20px 40px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgb(90 200 250 / .2);position:sticky;top:0;z-index:100;transition:0.3s}
+        .logo{font-size:28px;font-weight:700;color:#5ac8fa;letter-spacing:2px;user-select:none;display:flex;align-items:center;gap:10px}
+        .logo-img{width:40px;height:40px;border-radius:50%;object-fit:cover}
+        nav ul{list-style:none;display:flex;gap:30px;flex-wrap:wrap;align-items:center}
+        nav a{text-decoration:none;color:#5ac8fa;font-weight:600;font-size:16px;padding:8px 12px;border-radius:6px;transition:.3s;cursor:pointer}
+        nav a.active,nav a:hover{background:#5ac8fa;color:#fff;box-shadow:0 0 8px #5ac8fa}
+        main{flex:1;padding:80px 20px 40px;max-width:1100px;margin:0 auto;transition:0.3s}
+        section{display:none;animation:fadeIn .5s ease forwards}
+        section.active{display:block}
+        h1{font-size:2.4rem;color:#007acc;margin-bottom:15px;letter-spacing:1.2px;text-shadow:0 0 6px #a3d4ff;transition:0.3s}
+        p{font-size:1.05rem;color:#555;margin-bottom:24px;max-width:700px;transition:0.3s}
+        .btn-primary{background:#5ac8fa;color:#fff;padding:12px 26px;font-size:1rem;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 12px #5ac8fa;transition:.3s;text-decoration:none;display:inline-block}
+        .btn-primary:hover{box-shadow:0 0 20px #4ab0f8;background:#4ab0f8}
+        form{display:flex;flex-direction:column;gap:15px;max-width:500px}
+        input,textarea{padding:12px;border-radius:5px;border:1px solid #ccc;font-size:1rem;transition:0.3s}
+        button.submit-btn{background:#4a90e2;color:#fff;padding:12px;border:none;border-radius:5px;cursor:pointer;transition:0.3s}
+        button.submit-btn:hover{background:#357ab8}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;transition:0.3s}
+        .panel{border:1px solid #e6f2ff;border-radius:12px;padding:14px;background:#f9fcff;transition:0.3s}
+        .panel h3{margin-bottom:8px;color:#007acc;transition:0.3s}
+        .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+        #preview{font-size:22px;min-height:40px;margin-top:8px;padding:8px 10px;border-radius:8px;background:#fff;border:1px dashed #a3d4ff;transition:0.3s}
+        .badge{background:#eef8ff;border:1px solid #cfeaff;border-radius:8px;padding:6px 10px;transition:0.3s}
+        .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+        .controls button{padding:10px 14px;border:1px solid #cfeaff;border-radius:10px;background:#fff;cursor:pointer;transition:0.3s}
+        .controls button:hover{background:#eaf6ff}
+        video,canvas{border-radius:12px;border:2px solid #5ac8fa;max-width:100%;transition:0.3s}
+        #snapUser{display:none}
+        #prob{color:#0a8f2f;font-weight:600;transition:0.3s}
+        #videoMessage{display:none;width:320px;height:240px;border:2px solid #5ac8fa;border-radius:18px;margin:10px 0;opacity:0;transition:opacity 0.7s ease;object-fit:cover}
+        #videoMessage.show{opacity:1;display:block}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @media (max-width:900px){.grid{grid-template-columns:1fr}}
+        #toggleCameraUser, #toggleMic{background:#fff !important;color:#007acc !important;font-weight:700;border:2px solid #5ac8fa;border-radius:12px;box-shadow:0 0 10px rgba(90,200,250,0.4);transition:0.3s;min-width:150px;font-size:17px}
+        #toggleCameraUser:hover, #toggleMic:hover{background:#e6f2ff !important;color:#005fa3 !important;box-shadow:0 0 14px rgba(90,200,250,0.6)}
+        
+        /* Dark Mode */
+        body.dark{background:#121212;color:#e0e0e0}
+        body.dark header{background:#1f1f1f;box-shadow:0 2px 8px rgba(90,200,250,0.2)}
+        body.dark .logo{color:#4ab0f8}
+        body.dark nav a{color:#4ab0f8}
+        body.dark nav a.active, body.dark nav a:hover{background:#4ab0f8;color:#fff;box-shadow:0 0 8px #4ab0f8}
+        body.dark main{color:#e0e0e0}
+        body.dark h1{color:#4ab0f8;text-shadow:0 0 6px #6fbfff}
+        body.dark p{color:#ccc}
+        body.dark .panel{background:#1e1e1e;border:1px solid #333}
+        body.dark .panel h3{color:#4ab0f8}
+        body.dark .badge{background:#2a2a2a;border:1px solid #444;color:#fff}
+        body.dark #preview{background:#1a1a1a;border:1px dashed #4ab0f8;color:#fff}
+        body.dark input, body.dark textarea{background:#1a1a1a;border:1px solid #444;color:#fff}
+        body.dark .controls button{background:#2a2a2a;border:1px solid #4ab0f8;color:#fff}
+        body.dark .controls button:hover{background:#3a3a3a}
+        body.dark video, body.dark canvas{border:2px solid #4ab0f8}
+        body.dark button.submit-btn{background:#4ab0f8}
+        body.dark button.submit-btn:hover{background:#357ab8}
+        
+        /* Home Section */
+        #home.active{display:flex;flex-wrap:wrap;align-items:center;gap:40px}
+        #home .text{flex:1;min-width:300px}
+        #home h1{font-size:2.8rem;color:#007acc;margin-bottom:20px;line-height:1.3;text-shadow:0 0 10px #a3d4ff}
+        #home p{font-size:1.15rem;color:#444;margin-bottom:24px;max-width:600px}
+        #home .btn-primary{background:#5ac8fa;color:#fff;padding:14px 28px;font-size:1.1rem;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 15px #5ac8fa;transition:.3s;text-decoration:none;display:inline-block}
+        #home .btn-primary:hover{box-shadow:0 0 20px #4ab0f8;background:#4ab0f8}
+        #home .features{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+        #home .feature{background:#f9fcff;border:1px solid #e6f2ff;padding:16px;border-radius:12px;transition:.3s}
+        #home .feature:hover{box-shadow:0 0 12px rgba(90,200,250,.4);transform:translateY(-4px)}
+        #home .feature h4{color:#007acc;margin-bottom:8px}
+        #home .feature p{font-size:0.95rem;color:#555;margin:0}
+        #home .video-box{flex:1;min-width:320px;text-align:center}
+        #home video{max-width:100%;border-radius:16px;box-shadow:0 0 18px rgba(0,0,0,.15);border:2px solid #5ac8fa}
+        
+        /* Login Section */
+        #login.active{display:flex;justify-content:center;align-items:center;min-height:70vh}
+        .login-container{background:#f9fcff;border-radius:16px;padding:40px;box-shadow:0 10px 30px rgba(0,0,0,0.1);max-width:450px;width:100%;border:1px solid #e6f2ff}
+        .login-header{text-align:center;margin-bottom:30px}
+        .login-header img{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:15px}
+        .login-header h1{font-size:2rem;color:#007acc;margin-bottom:10px}
+        .login-header p{color:#666;font-size:1rem}
+        .login-form{display:flex;flex-direction:column;gap:20px}
+        .form-group{display:flex;flex-direction:column;gap:8px}
+        .form-group label{font-weight:600;color:#555}
+        .form-group input{padding:12px;border-radius:8px;border:1px solid #ddd;font-size:1rem;transition:0.3s}
+        .form-group input:focus{outline:none;border-color:#5ac8fa;box-shadow:0 0 0 2px rgba(90,200,250,0.2)}
+        .login-options{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+        .remember-me{display:flex;align-items:center;gap:8px}
+        .forgot-password{color:#5ac8fa;text-decoration:none;font-size:0.9rem}
+        .forgot-password:hover{text-decoration:underline}
+        .login-btn{background:#5ac8fa;color:#fff;padding:14px;border:none;border-radius:8px;font-size:1.1rem;font-weight:600;cursor:pointer;transition:0.3s;box-shadow:0 4px 12px rgba(90,200,250,0.3)}
+        .login-btn:hover{background:#4ab0f8;box-shadow:0 6px 16px rgba(90,200,250,0.4)}
+        .signup-link{text-align:center;margin-top:20px;color:#666}
+        .signup-link a{color:#5ac8fa;text-decoration:none;font-weight:600}
+        .signup-link a:hover{text-decoration:underline}
+        .error-message{color:#f56565;font-size:0.9rem;margin-top:5px;display:none}
+        
+        /* Auth Pages */
+        #signup, #forgot-password{display:none;justify-content:center;align-items:center;min-height:70vh}
+        #signup.active, #forgot-password.active{display:flex}
+        .auth-container{background:#f9fcff;border-radius:16px;padding:40px;box-shadow:0 10px 30px rgba(0,0,0,0.1);max-width:450px;width:100%;border:1px solid #e6f2ff}
+        .auth-header{text-align:center;margin-bottom:30px}
+        .auth-header img{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:15px}
+        .auth-header h1{font-size:2rem;color:#007acc;margin-bottom:10px}
+        .auth-header p{color:#666;font-size:1rem}
+        .auth-form{display:flex;flex-direction:column;gap:20px}
+        .back-to-login{text-align:center;margin-top:20px}
+        .back-to-login a{color:#5ac8fa;text-decoration:none;font-weight:600}
+        .back-to-login a:hover{text-decoration:underline}
+        
+        /* Text-to-Speech Button */
+        #speakText{background:#ff9f43;color:#fff;padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:600;transition:0.3s;margin-top:10px}
+        #speakText:hover{background:#ff7f00}
+        
+        /* Dark Mode for Auth Pages */
+        body.dark .login-container, body.dark .auth-container{background:#1e1e1e;border:1px solid #333}
+        body.dark .login-header p, body.dark .auth-header p{color:#ccc}
+        body.dark .form-group label{color:#e0e0e0}
+        body.dark .form-group input{background:#2a2a2a;border:1px solid #444;color:#fff}
+        body.dark .form-group input:focus{border-color:#4ab0f8;box-shadow:0 0 0 2px rgba(74,176,248,0.2)}
+        body.dark .signup-link, body.dark .back-to-login{color:#ccc}
+        
+        /* Responsive */
+        @media (max-width:768px){
+            header{padding:15px 20px}
+            nav ul{gap:15px}
+            .login-container, .auth-container{padding:30px 20px;margin:0 15px}
+        }
+        
+        .quick{background-color:#5ac8fa;color:#fff;border:none;border-radius:12px;padding:7px 14px;font-size:14px;cursor:pointer;transition:0.3s}
+        .quick:hover{background-color:#4ab0f8;transform:scale(1.05)}
+    </style>
+</head>
+<body>
+    <div id="particles-js" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;"></div>
+    
+    <!-- Header (يظهر فقط بعد تسجيل الدخول) -->
+    <header id="appHeader" style="display:none; position: relative; align-items: center; padding: 20px 40px; background:#e6f2ff; box-shadow:0 2px 8px rgba(90,200,250,.2);">
+        <!-- الشعار على اليسار -->
+        <div class="logo" aria-label="Eshara Logo">
+            <img src="logo.png" alt="Eshara Logo" class="logo-img" onerror="this.style.display='none'">
+            <span>Eshara</span>
+        </div>
+        
+        <!-- روابط التنقل بالوسط -->
+        <nav style="position:absolute; left:50%; transform: translateX(-50%);">
+            <ul style="list-style:none; display:flex; gap:30px; margin:0; padding:0;">
+                <li><a href="#" class="nav-link active" data-target="home">الصفحة الرئيسية</a></li>
+                <li><a href="#" class="nav-link" data-target="translate">الترجمة</a></li>
+                <li><a href="#" class="nav-link" data-target="about">حول</a></li>
+                <li><a href="#" class="nav-link" data-target="contact">تواصل</a></li>
+            </ul>
+        </nav>
+        
+        <!-- الوضع الليلي + تسجيل الخروج على اليمين -->
+        <div style="display:flex; align-items:center; gap:12px;">
+            <label class="theme-toggle" style="cursor:pointer">
+                <input type="checkbox" id="darkModeToggle" style="display:none">
+                <span id="themeLabel">الوضع النهاري</span>
+            </label>
+            <button id="logoutBtn" style="padding:8px 14px; border:none; border-radius:8px; background:#f56565; color:#fff; cursor:pointer; font-weight:600; transition:0.3s;">
+                تسجيل خروج
+            </button>
+        </div>
+    </header>
+    
+    <main>
+        <!-- صفحة تسجيل الدخول (الصفحة الرئيسية قبل التسجيل) -->
+        <section id="login" class="active">
+            <div class="login-container">
+                <div class="login-header">
+                    <img src="logo.png" alt="Eshara Logo" onerror="this.style.display='none'">
+                    <h1>مرحباً بك في Eshara</h1>
+                    <p>سجل الدخول للوصول إلى مترجم لغة الإشارة</p>
+                </div>
+                <form class="login-form" id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">البريد الإلكتروني</label>
+                        <input type="email" id="loginEmail" placeholder="أدخل بريدك الإلكتروني" required>
+                        <div class="error-message" id="loginEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">كلمة المرور</label>
+                        <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required>
+                        <div class="error-message" id="loginPasswordError"></div>
+                    </div>
+                    <div class="login-options">
+                        <div class="remember-me">
+                            <input type="checkbox" id="rememberMe">
+                            <label for="rememberMe">تذكرني</label>
+                        </div>
+                        <a href="#" class="forgot-password" id="forgotPasswordLink">نسيت كلمة المرور؟</a>
+                    </div>
+                    <button type="submit" class="login-btn">تسجيل الدخول</button>
+                </form>
+                <div class="signup-link">
+                    ليس لديك حساب؟ <a href="#" id="signupLink">إنشاء حساب جديد</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- صفحة إنشاء حساب -->
+        <section id="signup">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <img src="logo.png" alt="Eshara Logo" onerror="this.style.display='none'">
+                    <h1>إنشاء حساب جديد</h1>
+                    <p>انضم إلى مجتمع Eshara اليوم</p>
+                </div>
+                <form class="auth-form" id="signupForm">
+                    <div class="form-group">
+                        <label for="signupName">الاسم الكامل</label>
+                        <input type="text" id="signupName" placeholder="أدخل اسمك الكامل" required>
+                        <div class="error-message" id="signupNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">البريد الإلكتروني</label>
+                        <input type="email" id="signupEmail" placeholder="أدخل بريدك الإلكتروني" required>
+                        <div class="error-message" id="signupEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">كلمة المرور</label>
+                        <input type="password" id="signupPassword" placeholder="أنشئ كلمة مرور قوية" required>
+                        <div class="error-message" id="signupPasswordError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupConfirmPassword">تأكيد كلمة المرور</label>
+                        <input type="password" id="signupConfirmPassword" placeholder="أعد إدخال كلمة المرور" required>
+                        <div class="error-message" id="signupConfirmPasswordError"></div>
+                    </div>
+                    <button type="submit" class="login-btn">إنشاء حساب</button>
+                </form>
+                <div class="back-to-login">
+                    <a href="#" id="backToLogin">العودة إلى تسجيل الدخول</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- صفحة نسيان كلمة المرور -->
+        <section id="forgot-password">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <img src="logo.png" alt="Eshara Logo" onerror="this.style.display='none'">
+                    <h1>استعادة كلمة المرور</h1>
+                    <p>أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور</p>
+                </div>
+                <form class="auth-form" id="forgotPasswordForm">
+                    <div class="form-group">
+                        <label for="forgotEmail">البريد الإلكتروني</label>
+                        <input type="email" id="forgotEmail" placeholder="أدخل بريدك الإلكتروني" required>
+                        <div class="error-message" id="forgotEmailError"></div>
+                    </div>
+                    <button type="submit" class="login-btn">إرسال رابط الاستعادة</button>
+                </form>
+                <div class="back-to-login">
+                    <a href="#" id="backToLoginFromForgot">العودة إلى تسجيل الدخول</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- الصفحات التالية تظهر فقط بعد تسجيل الدخول -->
+           <section id="home" >
+    <div class="text">
+      <h1>ترجمة لغة الإشارة بالذكاء الاصطناعي</h1>
+      <p style="color: red; font-weight: bold;">من الإشارة إلى نص وصوت في الوقت الحقيقي — لمساعدة مجتمع الصمّ على التواصل السلس بسهولة.</p>
+      <a href="#" class="btn-primary" data-target="translate">ابدأ الترجمة الآن</a>
+
+      <div class="features">
+        <div class="feature">
+          <h4>🎥 ترجمة مباشرة</h4>
+          <p>استخدم الكاميرا لالتقاط الإشارات ومعالجتها فورياً.</p>
+        </div>
+        <div class="feature">
+          <h4>🔒 خصوصية أولاً</h4>
+          <p>الصور تُعالج محلياً فقط دون إرسال بياناتك.</p>
+        </div>
+        <div class="feature">
+          <h4>✨ واجهة سهلة</h4>
+          <p>تصميم عصري وأزرار كبيرة لتجربة سلسة.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-box" style="flex:1; min-width:320px; text-align:center;">
+  <video autoplay loop muted controls 
+         style="width:100%; height:100%; max-height:360px; border-radius:16px; object-fit:cover; border:2px solid #5ac8fa;">
+    <source src="salam.mp4" type="video/mp4">
+    متصفحك لا يدعم تشغيل الفيديو.
+  </video>
+</div>
+  </section>
+
+        <section id="translate">
+            <h1>ترجمة مباشرة من الكاميرا</h1>
+            <div class="grid">
+                <!-- لوحة كاميرا المستخدم -->
+                <div class="panel" style="direction:rtl">
+                    <h3>كاميرا المستخدم (تترجم الإشارات)</h3>
+                    <video id="videoUser" autoplay playsinline style="width:320px; height:240px; border-radius:12px; border:2px solid #5ac8fa;"></video>
+                    <canvas id="snapUser" width="320" height="240" style="display:none;"></canvas>
+                    <div class="controls" style="margin-top:10px">
+                        <button id="toggleCameraUser">🎥 تشغيل الكاميرا</button>
+                    </div>
+                    <div style="margin-top:16px">
+                        <div class="badge">الحرف: <span id="char" style="font-family:monospace">—</span></div>
+                        <div class="badge">الاحتمال: <span id="prob">0.00</span></div>
+                        <div style="margin-top:10px">النص:</div>
+                        <div id="preview" dir="rtl"></div>
+                        <button id="speakText">🔊 نطق النص</button>
+                        <button id="clearUserText" class="btn-primary" style="margin-top:10px">🗑️ امسح النص</button>
+                    </div>
+                </div>
+                
+                <!-- لوحة الرسائل -->
+                <div class="panel" style="direction:rtl; display:flex; flex-direction:column; align-items:center;">
+                    <!-- حاوية الفيديو ثابتة الحجم 320x240 -->
+                    <div class="video-container" style="width:320px; height:240px; background:transparent; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                        <video id="videoMessage" controls style="width:320px; height:240px; object-fit:cover; border-radius:12px;">
+                            <source src="WhatsApp Video 2025-09-22 at 7.08.18 PM.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    <div class="controls" style="margin-top:10px">
+                        <button id="toggleMic">🎤 تشغيل المايك</button>
+                        <button id="clearMic">مسح النص</button>
+                    </div>
+                    <textarea id="deafText" rows="8" style="width:100%;margin-top:10px" placeholder="سيظهر هنا النص الناتج عن كلام الموظّف..."></textarea>
+                    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="quick" data-video="salam.mp4">السلام عليكم</button>
+                        <button class="quick" data-video="walekomAlsalam.mp4">وعليكم السلام</button>
+                        <button class="quick" data-video="ahlawsahla.mp4">اهلا وسهلا</button>
+                        <button class="quick" data-video="GoodMorning.mp4">صباح الخير</button>
+                        <button class="quick" data-video="Thanks.mp4">شكرا</button>
+                    </div>
+                    <small style="display:block;margin-top:8px;color:#666">
+                        تعمل هذه الميزة في متصفّحات تدعم Web Speech API (مثلاً Chrome).
+                    </small>
+                </div>
+            </div>
+        </section>
+        
+        <section id="about">
+            <h1>عن مشروعنا</h1>
+            <p>
+                <strong>Eshara</strong> هو مشروع يهدف إلى تسهيل التواصل بين الصم والمجتمع من خلال استخدام تقنيات الذكاء الاصطناعي وMediaPipe للتعرف على لغة الإشارة العربية وتحويلها إلى نصوص منطوقة ومرئية في الوقت الفعلي.
+            </p>
+            <h2>من نحن</h2>
+            <p>
+                نحن فريق <strong>NovaIT</strong>، مجموعة من المبرمجين والمصممين الشغوفين بالتقنية الحديثة، نسعى لتطوير حلول مبتكرة تُحدث فرقاً في حياة الناس وتسهّل تواصلهم.
+            </p>
+            <ul style="margin-top:10px;list-style:disc inside;">
+                <li>💡 شغفنا: تطوير تطبيقات ذكية وسهلة الاستخدام.</li>
+                <li>🤝 هدفنا: بناء حلول تعزز التواصل والفهم بين الجميع.</li>
+                <li>🌐 خبرتنا: الذكاء الاصطناعي، واجهات المستخدم، وتحليل الإشارات.</li>
+            </ul>
+        </section>
+        
+        <section id="contact">
+            <h1>تواصل معنا</h1>
+            <form id="contactForm">
+                <input type="text" placeholder="اسمك" required />
+                <input type="email" placeholder="بريدك" required />
+                <textarea placeholder="رسالتك" rows="5" required></textarea>
+                <button type="submit" class="submit-btn">إرسال</button>
+            </form>
+        </section>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+        // تهيئة Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuqd0qWYdM2ZckLhBCTG5Q3kophMzTSSc",
+            authDomain: "eshara-a0843.firebaseapp.com",
+            projectId: "eshara-a0843",
+            storageBucket: "eshara-a0843.firebasestorage.app",
+            messagingSenderId: "179000594923",
+            appId: "1:179000594923:web:59a480b3a9dc06d6bc49ae"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // عناصر DOM
+        const loginSection = document.getElementById('login');
+        const signupSection = document.getElementById('signup');
+        const forgotPasswordSection = document.getElementById('forgot-password');
+        const appHeader = document.getElementById('appHeader');
+        const mainSections = document.querySelectorAll('#home, #translate, #about, #contact');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        // روابط التنقل بين صفحات المصادقة
+        document.getElementById('signupLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            loginSection.classList.remove('active');
+            signupSection.classList.add('active');
+        });
+        
+        document.getElementById('backToLogin').addEventListener('click', (e) => {
+            e.preventDefault();
+            signupSection.classList.remove('active');
+            loginSection.classList.add('active');
+        });
+        
+        document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            loginSection.classList.remove('active');
+            forgotPasswordSection.classList.add('active');
+        });
+        
+        document.getElementById('backToLoginFromForgot').addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotPasswordSection.classList.remove('active');
+            loginSection.classList.add('active');
+        });
+        
+        // تسجيل الدخول
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    showAppContent();
+                })
+                .catch((error) => {
+                    alert('خطأ في تسجيل الدخول: ' + error.message);
+                });
+        });
+        
+        // إنشاء حساب
+        document.getElementById('signupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                alert('كلمة المرور غير متطابقة');
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    return db.collection('users').doc(user.uid).set({
+                        name: name,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    showAppContent();
+                })
+                .catch((error) => {
+                    alert('خطأ في إنشاء الحساب: ' + error.message);
+                });
+        });
+        
+        // نسيان كلمة المرور
+        document.getElementById('forgotPasswordForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value;
+            
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    alert('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+                    forgotPasswordSection.classList.remove('active');
+                    loginSection.classList.add('active');
+                })
+                .catch((error) => {
+                    alert('خطأ: ' + error.message);
+                });
+        });
+        
+        // تسجيل الخروج
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                showAuthContent();
+            });
+        });
+        
+        // عرض محتوى التطبيق بعد تسجيل الدخول
+        function showAppContent() {
+            loginSection.classList.remove('active');
+            signupSection.classList.remove('active');
+            forgotPasswordSection.classList.remove('active');
+            appHeader.style.display = 'flex';
+            document.getElementById('home').classList.add('active');
+        }
+        
+        // عرض محتوى المصادقة (قبل تسجيل الدخول)
+        function showAuthContent() {
+            appHeader.style.display = 'none';
+            loginSection.classList.add('active');
+            signupSection.classList.remove('active');
+            forgotPasswordSection.classList.remove('active');
+            mainSections.forEach(sec => sec.classList.remove('active'));
+        }
+
+        // تبديل الوضع الليلي / النهاري
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const themeLabel = document.getElementById('themeLabel');
+
+        darkModeToggle.addEventListener('change', () => {
+            document.body.classList.toggle('dark', darkModeToggle.checked);
+            themeLabel.textContent = darkModeToggle.checked ? 'الوضع الليلي' : 'الوضع النهاري';
+        });
+
+        // التنقل بين صفحات التطبيق بعد تسجيل الدخول
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+
+                // إزالة active من جميع الروابط
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                // إخفاء جميع الأقسام
+                mainSections.forEach(sec => sec.classList.remove('active'));
+
+                // إظهار القسم الهدف
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) targetSection.classList.add('active');
+            });
+        });
+
+        // ربط زر "ابدأ الترجمة الآن" بصفحة الترجمة
+        document.querySelector('a.btn-primary[data-target="translate"]').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('.nav-link[data-target="translate"]').click();
+        });
+
+        // متغيرات الكاميرا والترجمة
+        const videoUser = document.getElementById('videoUser');
+        const canvasUser = document.getElementById('snapUser');
+        const toggleCameraUser = document.getElementById('toggleCameraUser');
+        const charEl = document.getElementById('char');
+        const probEl = document.getElementById('prob');
+        const outEl = document.getElementById('preview');
+        const clearUserText = document.getElementById('clearUserText');
+        const videoMessage = document.getElementById('videoMessage');
+        
+        // خريطة الكلمات السريعة إلى ملفات الفيديو
+        const quickMap = {
+            "السلام عليكم": "salam.mp4",
+            "وعليكم السلام": "walekomAlsalam.mp4",
+            "اهلا وسهلا": "ahlawsahla.mp4",
+            "صباح الخير": "GoodMorning.mp4",
+            "شكرا": "Thanks.mp4",
+            "كيف الصحه": "keefelsaha.mp4",
+            "جيد": "good.mp4",
+            "سيء": "bad.mp4",
+            "تعبان": "tired.mp4",
+            "مريض": "sick.mp4",
+            "نعم": "yes.mp4",
+            "لا": "no.mp4"
+        };
+
+        let streamUser = null;
+        let cameraOn = false;
+        let lastChar = null;
+        let lastCharTime = 0;
+        let confirmedText = '';
+        let charLocked = false;
+        let checkTimeout = null;
+
+        // تشغيل وإيقاف الكاميرا للمستخدم
+        toggleCameraUser.addEventListener('click', async () => {
+            if (!cameraOn) {
+                try {
+                    streamUser = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
+                    videoUser.srcObject = streamUser;
+                    toggleCameraUser.textContent = "🛑 إيقاف الكاميرا";
+                    cameraOn = true;
+                } catch(e) {
+                    alert('تعذّر فتح الكاميرا: ' + e.message);
+                }
+            } else {
+                streamUser.getTracks().forEach(t => t.stop());
+                videoUser.srcObject = null;
+                streamUser = null;
+                toggleCameraUser.textContent = "🎥 تشغيل الكاميرا";
+                cameraOn = false;
+            }
+        });
+
+        // مسح النص
+        clearUserText.addEventListener('click', () => {
+            confirmedText = '';
+            outEl.textContent = '';
+            videoMessage.style.display = 'none';
+            videoMessage.classList.remove('show');
+            videoMessage.pause();
+        });
+
+        // إظهار الفيديو المناسب
+        function showVideoIfNeeded(text) {
+            text = text.trim();
+            for (let key in quickMap) {
+                if (text === key) {
+                    videoMessage.src = quickMap[key];
+                    videoMessage.style.display = 'block';
+                    setTimeout(() => videoMessage.classList.add('show'), 50);
+                    videoMessage.play();
+                    break;
+                }
+            }
+        }
+
+        // حلقة الترجمة الرئيسية
+        async function tick() {
+            if (videoUser && videoUser.readyState === 4 && streamUser) {
+                const ctx = canvasUser.getContext('2d');
+                ctx.drawImage(videoUser, 0, 0, canvasUser.width, canvasUser.height);
+                const dataUrl = canvasUser.toDataURL('image/jpeg', 0.8);
+                
+                try {
+                    const res = await fetch('/predict', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({image: dataUrl})
+                    });
+                    const js = await res.json();
+                    let currentChar = js.arabic || js.label || '—';
+                    probEl.textContent = (js.prob || 0).toFixed(2);
+
+                    const now = Date.now();
+                    if (currentChar !== lastChar) {
+                        lastChar = currentChar;
+                        lastCharTime = now;
+                        charLocked = false;
+                        charEl.textContent = currentChar;
+                        if (checkTimeout) clearTimeout(checkTimeout);
+                    } else if (currentChar !== '—' && !charLocked && now - lastCharTime >= 1500) {
+                        let charToAdd = currentChar.toLowerCase() === 'space' ? ' ' : currentChar;
+                        confirmedText += charToAdd;
+                        outEl.textContent = confirmedText;
+                        charLocked = true;
+                        charEl.textContent = currentChar + " ✅";
+
+                        showVideoIfNeeded(confirmedText);
+
+                        if (checkTimeout) clearTimeout(checkTimeout);
+                        checkTimeout = setTimeout(() => { charEl.textContent = currentChar; }, 1000);
+                    } else {
+                        charEl.textContent = charLocked ? (currentChar + " ✅") : currentChar;
+                    }
+                } catch(e) {
+                    // تجاهل الأخطاء في الاتصال بالخادم
+                }
+            }
+            setTimeout(tick, 200);
+        }
+        tick();
+
+        // نطق النص
+        const speakTextBtn = document.getElementById('speakText');
+        speakTextBtn.addEventListener('click', () => {
+            const utterance = new SpeechSynthesisUtterance(outEl.textContent);
+            utterance.lang = 'ar-SA';
+            window.speechSynthesis.speak(utterance);
+        });
+
+        // متغيرات التعرف على الصوت
+        const toggleMic = document.getElementById('toggleMic');
+        const clearMic = document.getElementById('clearMic');
+        const deafText = document.getElementById('deafText');
+        let recognition = null;
+        let listening = false;
+
+        // إعداد التعرف على الصوت
+        function setupSTT() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) {
+                alert("متصفحك لا يدعم Web Speech API. جرّب Chrome.");
+                return null;
+            }
+            const r = new SR();
+            r.lang = "ar-SA";
+            r.interimResults = true;
+            r.continuous = true;
+            r.onresult = (e) => {
+                let finalText = "";
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    const chunk = e.results[i][0].transcript;
+                    if (e.results[i].isFinal) finalText += chunk + " ";
+                }
+                if (finalText.trim()) {
+                    deafText.value += finalText.trim() + "\n";
+                    deafText.scrollTop = deafText.scrollHeight;
+                    showVideoIfNeeded(finalText);
+                }
+            };
+            r.onerror = (e) => console.warn("STT error:", e);
+            r.onend = () => { if (listening) r.start(); };
+            return r;
+        }
+
+        // تشغيل/إيقاف المايك
+        toggleMic.addEventListener('click', () => {
+            if (!recognition) recognition = setupSTT();
+            if (!recognition) return;
+            
+            if (!listening) {
+                try { 
+                    recognition.start(); 
+                    listening = true; 
+                } catch(_) {}
+                toggleMic.textContent = "🛑 إيقاف المايك";
+            } else {
+                listening = false; 
+                recognition.stop();
+                toggleMic.textContent = "🎤 تشغيل المايك";
+            }
+        });
+
+        // مسح نص المايك
+        clearMic.addEventListener('click', () => {
+            deafText.value = "";
+            videoMessage.style.display = 'none';
+            videoMessage.classList.remove('show');
+            videoMessage.pause();
+        });
+
+        // أزرار الرسائل السريعة
+        const quickButtons = document.querySelectorAll(".quick");
+        quickButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                deafText.value += btn.textContent.trim() + "\n";
+                deafText.scrollTop = deafText.scrollHeight;
+                const videoSrc = btn.dataset.video;
+                if(videoSrc) {
+                    videoMessage.src = videoSrc;
+                    videoMessage.style.display = 'block';
+                    setTimeout(() => videoMessage.classList.add('show'), 50);
+                    videoMessage.play();
+                }
+            });
+        });
+
+        // معالج نموذج الاتصال
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('شكراً لتواصلك! سنعود إليك قريباً.');
+            e.target.reset();
+        });
+
+        // تهيئة particles.js
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80 },
+                color: { value: '#5ac8fa' },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5 },
+                size: { value: 3 },
+                move: { enable: true, speed: 2 },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: '#5ac8fa',
+                    opacity: 0.4,
+                    width: 1
+                }
+            },
+            interactivity: {
+                events: { 
+                    onhover: { enable: true, mode: 'repulse' },
+                    onclick: { enable: true, mode: 'push' }
+                },
+                modes: {
+                    repulse: { distance: 100 },
+                    push: { particles_nb: 4 }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
